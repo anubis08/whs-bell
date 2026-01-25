@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Flow — Dynamic</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Default: Monochrome (Black) */
+            --bg-gradient: radial-gradient(circle at center, #121212 0%, #000000 100%);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --accent: #ffffff;
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.5);
+            --modal-bg: #0a0a0a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-gradient);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            transition: background 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Palette Button - Top Right */
+        .theme-trigger {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            transition: 0.3s;
+        }
+        .theme-trigger:hover { transform: scale(1.1); background: rgba(255,255,255,0.1); }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 40px;
+            padding: 60px 40px;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        #period-display { font-size: 2.2rem; font-weight: 900; margin-bottom: 4px; letter-spacing: -1.5px; }
+        #status-label { font-size: 0.9rem; opacity: 0.5; margin-bottom: 30px; text-transform: lowercase; }
+        
+        .timer { font-size: 6rem; font-weight: 300; margin-bottom: 10px; font-variant-numeric: tabular-nums; letter-spacing: -4px; }
+        .comp-ticker { font-size: 0.7rem; opacity: 0.3; margin-top: 40px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
+
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 35px; }
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); }
+
+        /* Modal / Spotlight */
+        .spotlight-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px); z-index: 2000; justify-content: center; align-items: flex-start;
+            padding-top: 12vh;
+        }
+        .spotlight-card {
+            background: var(--modal-bg); width: 90%; max-width: 400px; border-radius: 20px;
+            border: 1px solid var(--glass-border); box-shadow: 0 40px 100px rgba(0,0,0,0.5); overflow: hidden;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .spotlight-header { padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.85rem; color: var(--text-dim); }
+        .choice-item {
+            padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03); transition: 0.2s;
+        }
+        .choice-item:hover { background: rgba(255, 255, 255, 0.05); }
+        .choice-item.active { background: rgba(255, 255, 255, 0.1); border-left: 3px solid var(--accent); }
+        
+        .color-preview { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div class="theme-trigger" onclick="openSpotlight('theme')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.71-.73 1.85-1.64.11-.73.69-1.36 1.45-1.36h1.2c3.03 0 5.5-2.47 5.5-5.5V11c0-4.97-4.03-9-9-9z"/><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/></svg>
+    </div>
+
+    <div class="glass-card">
+        <div id="period-display">--</div>
+        <div id="status-label">loading...</div>
+        <div class="timer" id="countdown">00:00:00</div>
+        <div class="controls">
+            <button class="btn" onclick="openSpotlight('mode')">Change</button>
+            <button class="btn" onclick="openSpotlight('view')">Schedule</button>
+        </div>
+        <div class="comp-ticker" id="comp-ticker">--</div>
+    </div>
+
+    <div class="spotlight-overlay" id="spotlight" onclick="closeSpotlight()">
+        <div class="spotlight-card" onclick="event.stopPropagation()">
+            <div class="spotlight-header" id="spotlight-title">Menu</div>
+            <div id="choices-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const themes = {
+            black:  { name: "Monochrome", bg: "radial-gradient(circle at center, #121212 0%, #000000 100%)", accent: "#ffffff", modal: "#0a0a0a" },
+            red:    { name: "Ruby", bg: "linear-gradient(135deg, #450a0a 0%, #1a0000 100%)", accent: "#f87171", modal: "#2d0000" },
+            blue:   { name: "Deep Sea", bg: "linear-gradient(135deg, #082f49 0%, #020617 100%)", accent: "#38bdf8", modal: "#020617" },
+            purple: { name: "Nebula", bg: "linear-gradient(135deg, #2e1065 0%, #020617 100%)", accent: "#c084fc", modal: "#0f011d" },
+            green:  { name: "Emerald", bg: "linear-gradient(135deg, #064e3b 0%, #020617 100%)", accent: "#4ade80", modal: "#021c15" },
+            custom: { name: "Sunset", bg: "linear-gradient(135deg, #451a03 0%, #1a0000 100%)", accent: "#fb923c", modal: "#2d1102" }
+        };
+
+        let currentThemeKey = 'black';
+        let currentModeKey = 'regular';
+
+        const schedules = {
+            regular: { name: "Regular", days: "Mon, Thu, Fri", data: [{n:"Period 0", s:"07:30", e:"08:25"}, {n:"Period 1", s:"08:30", e:"09:28"}, {n:"Period 2", s:"09:33", e:"10:30"}, {n:"Snack", s:"10:30", e:"10:45"}, {n:"Period 3", s:"10:50", e:"11:47"}, {n:"Period 4", s:"11:52", e:"12:49"}, {n:"Lunch", s:"12:49", e:"13:21"}, {n:"Period 5", s:"13:26", e:"14:23"}, {n:"HR", s:"14:23", e:"14:34"}, {n:"Period 6", s:"14:39", e:"15:36"}]},
+            early: { name: "Early Release", days: "Tuesday", data: [{n:"Period 0", s:"07:30", e:"08:25"}, {n:"Period 1", s:"08:30", e:"09:21"}, {n:"Period 2", s:"09:26", e:"10:16"}, {n:"Snack", s:"10:16", e:"10:31"}, {n:"Period 3", s:"10:36", e:"11:26"}, {n:"Period 4", s:"11:31", e:"12:21"}, {n:"Lunch", s:"12:21", e:"12:51"}, {n:"Period 5", s:"12:56", e:"13:46"}, {n:"Period 6", s:"13:51", e:"14:41"}]},
+            wednesday: { name: "Advisement", days: "Wednesday", data: [{n:"Period 0", s:"07:30", e:"08:25"}, {n:"Period 1", s:"08:30", e:"09:23"}, {n:"Period 2", s:"09:28", e:"10:20"}, {n:"Snack", s:"10:20", e:"10:35"}, {n:"Period 3", s:"10:40", e:"11:32"}, {n:"Period 4", s:"11:37", e:"12:29"}, {n:"Lunch", s:"12:29", e:"13:01"}, {n:"Period 5", s:"13:06", e:"13:58"}, {n:"Adv/HR", s:"13:58", e:"14:39"}, {n:"Period 6", s:"14:44", e:"15:36"}]},
+            activity: { name: "Activity", days: "Assembly", data: [{n:"Period 0", s:"07:30", e:"08:25"}, {n:"Period 1", s:"08:30", e:"09:24"}, {n:"Period 2", s:"09:29", e:"10:22"}, {n:"Snack", s:"10:22", e:"10:37"}, {n:"Period 3", s:"10:42", e:"11:35"}, {n:"Period 4", s:"11:40", e:"12:33"}, {n:"Activity", s:"12:33", e:"13:08"}, {n:"Lunch", s:"13:08", e:"13:40"}, {n:"Period 5", s:"13:45", e:"14:38"}, {n:"Period 6", s:"14:43", e:"15:36"}]},
+            comp: { name: "Comp Exams", days: "Exams", data: [{n:"Period 0", s:"07:30", e:"08:25"}, {n:"1st Comp", s:"08:30", e:"10:30"}, {n:"Snack", s:"10:30", e:"10:55"}, {n:"2nd Comp", s:"11:00", e:"13:00"}]}
+        };
+
+        function getCALime() { return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles"})); }
+        function toMins(t) { let [h, m] = t.split(':').map(Number); if (h < 7) h += 12; return h * 60 + m; }
+
+        function openSpotlight(type) {
+            const list = document.getElementById('choices-list');
+            const title = document.getElementById('spotlight-title');
+            list.innerHTML = '';
+            
+            if (type === 'theme') {
+                title.innerText = "Appearance";
+                for (let key in themes) {
+                    const active = (key === currentThemeKey) ? 'active' : '';
+                    list.innerHTML += `
+                        <div class="choice-item ${active}" onclick="setTheme('${key}')">
+                            <span>${themes[key].name}</span>
+                            <div class="color-preview" style="background:${themes[key].accent}"></div>
+                        </div>`;
+                }
+            } else if (type === 'mode') {
+                title.innerText = "Schedule Mode";
+                for (let key in schedules) {
+                    const active = (key === currentModeKey) ? 'active' : '';
+                    list.innerHTML += `<div class="choice-item ${active}" onclick="setMode('${key}')"><span>${schedules[key].name}</span><span style="font-size:0.7rem; opacity:0.4">${schedules[key].days}</span></div>`;
+                }
+            } else {
+                title.innerText = schedules[currentModeKey].name + " Times";
+                schedules[currentModeKey].data.forEach(p => {
+                    list.innerHTML += `<div class="choice-item"><span>${p.n}</span><span style="font-size:0.7rem; opacity:0.4">${p.s} — ${p.e}</span></div>`;
+                });
+            }
+            document.getElementById('spotlight').style.display = 'flex';
+        }
+
+        function setTheme(key) {
+            currentThemeKey = key;
+            const t = themes[key];
+            const root = document.documentElement;
+            root.style.setProperty('--bg-gradient', t.bg);
+            root.style.setProperty('--accent', t.accent);
+            root.style.setProperty('--modal-bg', t.modal);
+            closeSpotlight();
+        }
+
+        function setMode(key) { currentModeKey = key; closeSpotlight(); update(); }
+        function closeSpotlight() { document.getElementById('spotlight').style.display = 'none'; }
+
+        function update() {
+            const now = getCALime();
+            const curMins = now.getHours() * 60 + now.getMinutes();
+            const curSecs = now.getSeconds();
+            const activeData = schedules[currentModeKey].data;
+            let current = null, next = null;
+
+            for (let i = 0; i < activeData.length; i++) {
+                const s = toMins(activeData[i].s), e = toMins(activeData[i].e);
+                if (curMins >= s && curMins < e) { current = activeData[i]; break; }
+                if (curMins < s) { next = activeData[i]; break; }
+            }
+
+            const timerEl = document.getElementById('countdown');
+            const periodEl = document.getElementById('period-display');
+            const labelEl = document.getElementById('status-label');
+
+            if (current) {
+                const remSecs = (toMins(current.e) * 60) - (curMins * 60 + curSecs);
+                periodEl.innerHTML = `<b>${current.n}</b>`;
+                labelEl.innerText = "ends in";
+                timerEl.innerText = formatTime(remSecs);
+            } else if (next) {
+                const waitSecs = (toMins(next.s) * 60) - (curMins * 60 + curSecs);
+                periodEl.innerHTML = `<b>${next.n}</b>`;
+                labelEl.innerText = "starts in";
+                timerEl.innerText = formatTime(waitSecs);
+            } else {
+                periodEl.innerHTML = "<b>School's Out</b>";
+                labelEl.innerText = "see you tomorrow";
+                timerEl.innerText = "00:00";
+            }
+            
+            // Comp Ticker Update
+            const q3 = new Date("March 11, 2026").getTime();
+            const q4 = new Date("May 26, 2026").getTime();
+            const today = now.getTime();
+            let target = (today < q3) ? q3 : q4;
+            let label = (today < q3) ? "Q3 COMPS" : "Q4 COMPS";
+            const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+            document.getElementById('comp-ticker').innerText = `${diff} DAYS UNTIL ${label}`;
+        }
+
+        function formatTime(s) { const m = Math.floor(s / 60); const sec = s % 60; return `${m}:${String(sec).padStart(2, '0')}`; }
+
+        const day = getCALime().getDay();
+        if (day === 2) currentModeKey = 'early';
+        else if (day === 3) currentModeKey = 'wednesday';
+
+        setInterval(update, 1000);
+        update();
+
+        // Protection Script
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && (e.keyCode === 85)) e.preventDefault();
+            if (e.keyCode === 123) e.preventDefault();
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.keyCode === 73)) e.preventDefault();
+        });
+    </script>
+</body>
+</html>
