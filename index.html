@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Flow — Dynamic</title>
+    <title>WHS Bell Schedule</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Default: Monochrome (Black) */
             --bg-gradient: radial-gradient(circle at center, #121212 0%, #000000 100%);
             --glass-bg: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.12);
@@ -31,7 +30,6 @@
             transition: background 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Palette Button - Top Right */
         .theme-trigger {
             position: absolute;
             top: 25px;
@@ -84,7 +82,6 @@
         }
         .btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); }
 
-        /* Modal / Spotlight */
         .spotlight-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(20px); z-index: 2000; justify-content: center; align-items: flex-start;
@@ -142,9 +139,6 @@
             custom: { name: "Sunset", bg: "linear-gradient(135deg, #451a03 0%, #1a0000 100%)", accent: "#fb923c", modal: "#2d1102" }
         };
 
-        let currentThemeKey = 'black';
-        let currentModeKey = 'regular';
-
         const schedules = {
             regular: { name: "Regular", days: "Mon, Thu, Fri", data: [{n:"Period 0", s:"07:30", e:"08:25"}, {n:"Period 1", s:"08:30", e:"09:28"}, {n:"Period 2", s:"09:33", e:"10:30"}, {n:"Snack", s:"10:30", e:"10:45"}, {n:"Period 3", s:"10:50", e:"11:47"}, {n:"Period 4", s:"11:52", e:"12:49"}, {n:"Lunch", s:"12:49", e:"13:21"}, {n:"Period 5", s:"13:26", e:"14:23"}, {n:"HR", s:"14:23", e:"14:34"}, {n:"Period 6", s:"14:39", e:"15:36"}]},
             early: { name: "Early Release", days: "Tuesday", data: [{n:"Period 0", s:"07:30", e:"08:25"}, {n:"Period 1", s:"08:30", e:"09:21"}, {n:"Period 2", s:"09:26", e:"10:16"}, {n:"Snack", s:"10:16", e:"10:31"}, {n:"Period 3", s:"10:36", e:"11:26"}, {n:"Period 4", s:"11:31", e:"12:21"}, {n:"Lunch", s:"12:21", e:"12:51"}, {n:"Period 5", s:"12:56", e:"13:46"}, {n:"Period 6", s:"13:51", e:"14:41"}]},
@@ -155,6 +149,16 @@
 
         function getCALime() { return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Los_Angeles"})); }
         function toMins(t) { let [h, m] = t.split(':').map(Number); if (h < 7) h += 12; return h * 60 + m; }
+
+        let currentThemeKey = localStorage.getItem('whs-theme') || 'black';
+        let currentModeKey = localStorage.getItem('whs-mode');
+
+        if (!currentModeKey) {
+            const day = getCALime().getDay();
+            if (day === 2) currentModeKey = 'early';
+            else if (day === 3) currentModeKey = 'wednesday';
+            else currentModeKey = 'regular';
+        }
 
         function openSpotlight(type) {
             const list = document.getElementById('choices-list');
@@ -186,8 +190,9 @@
             document.getElementById('spotlight').style.display = 'flex';
         }
 
-        function setTheme(key) {
+        function setTheme(key, save = true) {
             currentThemeKey = key;
+            if (save) localStorage.setItem('whs-theme', key);
             const t = themes[key];
             const root = document.documentElement;
             root.style.setProperty('--bg-gradient', t.bg);
@@ -196,7 +201,13 @@
             closeSpotlight();
         }
 
-        function setMode(key) { currentModeKey = key; closeSpotlight(); update(); }
+        function setMode(key) { 
+            currentModeKey = key; 
+            localStorage.setItem('whs-mode', key);
+            closeSpotlight(); 
+            update(); 
+        }
+
         function closeSpotlight() { document.getElementById('spotlight').style.display = 'none'; }
 
         function update() {
@@ -232,7 +243,6 @@
                 timerEl.innerText = "00:00";
             }
             
-            // Comp Ticker Update
             const q3 = new Date("March 11, 2026").getTime();
             const q4 = new Date("May 26, 2026").getTime();
             const today = now.getTime();
@@ -244,14 +254,10 @@
 
         function formatTime(s) { const m = Math.floor(s / 60); const sec = s % 60; return `${m}:${String(sec).padStart(2, '0')}`; }
 
-        const day = getCALime().getDay();
-        if (day === 2) currentModeKey = 'early';
-        else if (day === 3) currentModeKey = 'wednesday';
-
+        setTheme(currentThemeKey, false);
         setInterval(update, 1000);
         update();
 
-        // Protection Script
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && (e.keyCode === 85)) e.preventDefault();
             if (e.keyCode === 123) e.preventDefault();
