@@ -1,3 +1,13 @@
+Here is the updated code.
+
+### Key Changes Made:
+
+* **Background Color Picker**: Transformed the accent menu drawer into a background color picker. The preset swatches have been configured using dark, accessible background tones (`#000000`, `#1a1010`, `#1a1610`, `#101a12`, `#10141a`, `#17101a`) ensuring that the contrast remains perfectly readable and the white text never disappears.
+* **Dismissible Bulletins**: Individual bulletin cards now feature an inline `✕` button to instantly clear them when clicked.
+* **Master Hide/Unhide Control**: Added a **Hide Bulletin / Show Bulletin** toggle action inside the navigation drawer group.
+* **Persistent Preferences**: Added robust `localStorage` logic that automatically remembers whether the user prefers the bulletin container hidden or unhidden across page refreshes. By default, it stays visible.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,6 +40,7 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+            transition: background-color 0.3s ease;
         }
 
         /* Top Bar & Unified Bulletin System */
@@ -52,6 +63,15 @@
             margin-bottom: 0.85rem;
             animation: fadeIn 0.4s ease;
             box-shadow: 0 4px 20px var(--glow);
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notice-content {
+            flex: 1;
+            padding-right: 1.5rem;
         }
 
         .notice-title {
@@ -67,6 +87,21 @@
             font-size: 1rem;
             color: #f2f2f7;
             font-weight: 500;
+        }
+
+        .dismiss-notice-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .dismiss-notice-btn:hover {
+            color: #ff453a;
         }
 
         /* Main Dashboard Frame */
@@ -179,7 +214,7 @@
         .drawer-group {
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1.2rem;
         }
 
         .menu-link {
@@ -459,12 +494,18 @@
             height: 26px;
             border-radius: 50%;
             cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.2s;
+            border: 2px solid rgba(255,255,255,0.2);
+            transition: transform 0.2s, border-color 0.2s;
         }
 
         .swatch:hover {
             transform: scale(1.15);
+            border-color: #ffffff;
+        }
+
+        .swatch.active-swatch {
+            border-color: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
         }
 
         /* System Animations */
@@ -501,18 +542,20 @@
             <div class="drawer-section-title">Navigation</div>
             <span class="menu-link" onclick="openWorkspace('pomo-overlay')">Focus Session</span>
             <span class="menu-link" onclick="openWorkspace('todo-overlay')">Task Manager</span>
+            <span class="menu-link" id="toggle-bulletin-btn" onclick="toggleBulletinVisibility()" style="font-size: 1.25rem; margin-top: 0.5rem; color: var(--muted);">Hide Bulletin</span>
         </div>
 
         <div>
-            <div class="drawer-section-title">Theme Accent</div>
+            <div class="drawer-section-title">Background Color</div>
             <div class="color-picker-wrap">
                 <div class="color-swatch-container">
-                    <div class="swatch" style="background: #ffffff;" onclick="setAccent('#ffffff')"></div>
-                    <div class="swatch" style="background: #ff453a;" onclick="setAccent('#ff453a')"></div>
-                    <div class="swatch" style="background: #ff9f0a;" onclick="setAccent('#ff9f0a')"></div>
-                    <div class="swatch" style="background: #30d158;" onclick="setAccent('#30d158')"></div>
-                    <div class="swatch" style="background: #0a84ff;" onclick="setAccent('#0a84ff')"></div>
-                    <div class="swatch" style="background: #bf5af2;" onclick="setAccent('#bf5af2')"></div>
+                    <!-- Secure dark hex palettes keeping text cleanly visible -->
+                    <div class="swatch" data-color="#000000" style="background: #000000;" onclick="setBackground('#000000')"></div>
+                    <div class="swatch" data-color="#1a1010" style="background: #1a1010;" onclick="setBackground('#1a1010')"></div>
+                    <div class="swatch" data-color="#1a1610" style="background: #1a1610;" onclick="setBackground('#1a1610')"></div>
+                    <div class="swatch" data-color="#101a12" style="background: #101a12;" onclick="setBackground('#101a12')"></div>
+                    <div class="swatch" data-color="#10141a" style="background: #10141a;" onclick="setBackground('#10141a')"></div>
+                    <div class="swatch" data-color="#17101a" style="background: #17101a;" onclick="setBackground('#17101a')"></div>
                 </div>
             </div>
         </div>
@@ -568,30 +611,30 @@
         const academicYear = 2026; 
 
         const dynamicEvents = [
-            { name: "First Day of School", date: new Date(2026, 7, 12), leadDays: 14 },
-            { name: "Labor Day (No School)", date: new Date(2026, 8, 7), leadDays: 5 },
-            { name: "1st Quarter Comps", date: new Date(2026, 9, 7), leadDays: 14 },
-            { name: "1st Quarter Ends", date: new Date(2026, 9, 9), leadDays: 7 },
-            { name: "Indigenous Peoples' Day (No School)", date: new Date(2026, 9, 12), leadDays: 5 },
-            { name: "Veterans Day (No School)", date: new Date(2026, 10, 11), leadDays: 5 },
-            { name: "Fall Break", date: new Date(2026, 10, 23), leadDays: 10 },
-            { name: "2nd Quarter Comps", date: new Date(2026, 11, 15), leadDays: 14 },
-            { name: "1st Semester Ends", date: new Date(2026, 11, 17), leadDays: 7 },
-            { name: "Winter Break", date: new Date(2026, 11, 21), leadDays: 14 },
-            { name: "Martin Luther King Jr. Day (No School)", date: new Date(2027, 0, 18), leadDays: 5 },
-            { name: "Presidents' Day (No School)", date: new Date(2027, 1, 15), leadDays: 5 },
-            { name: "3rd Quarter Comps", date: new Date(2027, 2, 10), leadDays: 14 },
-            { name: "3rd Quarter Ends", date: new Date(2027, 2, 12), leadDays: 7 },
-            { name: "Spring Break", date: new Date(2027, 3, 29), leadDays: 14 },
-            { name: "4th Quarter Comps", date: new Date(2027, 4, 24), leadDays: 14 },
-            { name: "Last Day of School", date: new Date(2027, 4, 27), leadDays: 21 }
+            { id: "e1", name: "First Day of School", date: new Date(2026, 7, 12), leadDays: 14 },
+            { id: "e2", name: "Labor Day (No School)", date: new Date(2026, 8, 7), leadDays: 5 },
+            { id: "e3", name: "1st Quarter Comps", date: new Date(2026, 9, 7), leadDays: 14 },
+            { id: "e4", name: "1st Quarter Ends", date: new Date(2026, 9, 9), leadDays: 7 },
+            { id: "e5", name: "Indigenous Peoples' Day (No School)", date: new Date(2026, 9, 12), leadDays: 5 },
+            { id: "e6", name: "Veterans Day (No School)", date: new Date(2026, 10, 11), leadDays: 5 },
+            { id: "e7", name: "Fall Break", date: new Date(2026, 10, 23), leadDays: 10 },
+            { id: "e8", name: "2nd Quarter Comps", date: new Date(2026, 11, 15), leadDays: 14 },
+            { id: "e9", name: "1st Semester Ends", date: new Date(2026, 11, 17), leadDays: 7 },
+            { id: "e10", name: "Winter Break", date: new Date(2026, 11, 21), leadDays: 14 },
+            { id: "e11", name: "Martin Luther King Jr. Day (No School)", date: new Date(2027, 0, 18), leadDays: 5 },
+            { id: "e12", name: "Presidents' Day (No School)", date: new Date(2027, 1, 15), leadDays: 5 },
+            { id: "e13", name: "3rd Quarter Comps", date: new Date(2027, 2, 10), leadDays: 14 },
+            { id: "e14", name: "3rd Quarter Ends", date: new Date(2027, 2, 12), leadDays: 7 },
+            { id: "e15", name: "Spring Break", date: new Date(2027, 3, 29), leadDays: 14 },
+            { id: "e16", name: "4th Quarter Comps", date: new Date(2027, 4, 24), leadDays: 14 },
+            { id: "e17", name: "Last Day of School", date: new Date(2027, 4, 27), leadDays: 21 }
         ];
 
         const compDates = [
-            new Date(2026, 9, 7),
-            new Date(2026, 11, 15),
-            new Date(2027, 2, 10),
-            new Date(2027, 4, 24)
+            { id: "c1", date: new Date(2026, 9, 7) },
+            { id: "c2", date: new Date(2026, 11, 15) },
+            { id: "c3", date: new Date(2027, 2, 10) },
+            { id: "c4", date: new Date(2027, 4, 24) }
         ];
 
         const structuralHolidays = [
@@ -727,43 +770,81 @@
             return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
-        // --- INTELLIGENT BULLETIN SYSTEM ---
+        // --- INTELLIGENT BULLETIN SYSTEM & STORAGE ---
+        let dismissedNotices = JSON.parse(localStorage.getItem('whs_dismissed_notices')) || [];
+        let bulletinHidden = localStorage.getItem('whs_bulletin_hidden') === 'true';
+
         function evaluateNotices() {
             const now = new Date();
             now.setHours(0,0,0,0);
             const container = document.getElementById('notices');
             container.innerHTML = '';
 
+            // Handle visibility state
+            if (bulletinHidden) {
+                container.style.display = 'none';
+                document.getElementById('toggle-bulletin-btn').innerText = "Show Bulletin";
+                return;
+            } else {
+                container.style.display = 'block';
+                document.getElementById('toggle-bulletin-btn').innerText = "Hide Bulletin";
+            }
+
             let nextCompText = "No upcoming comps scheduled";
+            let activeCompId = null;
             for (let target of compDates) {
-                if (target >= now) {
-                    const diffTime = target - now;
+                if (target.date >= now) {
+                    const diffTime = target.date - now;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     nextCompText = diffDays === 0 ? "Comps today!" : `${diffDays} days until Comps`;
+                    activeCompId = target.id;
                     break;
                 }
             }
 
-            const compBanner = document.createElement('div');
-            compBanner.className = "notice-card";
-            compBanner.innerHTML = `<div class="notice-title">Bulletin</div><div class="notice-desc">${nextCompText}</div>`;
-            container.appendChild(compBanner);
+            if (activeCompId && !dismissedNotices.includes(activeCompId)) {
+                const compBanner = document.createElement('div');
+                compBanner.className = "notice-card";
+                compBanner.innerHTML = `
+                    <div class="notice-content">
+                        <div class="notice-title">Bulletin</div>
+                        <div class="notice-desc">${nextCompText}</div>
+                    </div>
+                    <button class="dismiss-notice-btn" onclick="dismissNotice('${activeCompId}')" aria-label="Dismiss notice">✕</button>
+                `;
+                container.appendChild(compBanner);
+            }
 
             dynamicEvents.forEach(event => {
                 const diffTime = event.date - now;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                if (diffDays >= 0 && diffDays <= event.leadDays) {
+                if (diffDays >= 0 && diffDays <= event.leadDays && !dismissedNotices.includes(event.id)) {
                     const el = document.createElement('div');
                     el.className = "notice-card";
                     let displayDays = diffDays === 0 ? "Today" : (diffDays === 1 ? "Tomorrow" : `In ${diffDays} days`);
                     el.innerHTML = `
-                        <div class="notice-title">Bulletin &middot; ${displayDays}</div>
-                        <div class="notice-desc">${event.name} (${event.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</div>
+                        <div class="notice-content">
+                            <div class="notice-title">Bulletin &middot; ${displayDays}</div>
+                            <div class="notice-desc">${event.name} (${event.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</div>
+                        </div>
+                        <button class="dismiss-notice-btn" onclick="dismissNotice('${event.id}')" aria-label="Dismiss notice">✕</button>
                     `;
                     container.appendChild(el);
                 }
             });
+        }
+
+        function dismissNotice(id) {
+            dismissedNotices.push(id);
+            localStorage.setItem('whs_dismissed_notices', JSON.stringify(dismissedNotices));
+            evaluateNotices();
+        }
+
+        function toggleBulletinVisibility() {
+            bulletinHidden = !bulletinHidden;
+            localStorage.setItem('whs_bulletin_hidden', bulletinHidden);
+            evaluateNotices();
         }
 
         // --- SHEET WORKSPACE NAVIGATION OVERLAYS ---
@@ -905,17 +986,30 @@
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        // --- APPEARANCE MANAGEMENT ---
-        function setAccent(color) {
-            document.documentElement.style.setProperty('--accent', color);
-            document.documentElement.style.setProperty('--glow', color + "0D"); 
-            localStorage.setItem('whs_accent', color);
+        // --- APPEARANCE MANAGEMENT (BACKGROUND INTENSITY WORKSPACE) ---
+        function setBackground(color) {
+            document.documentElement.style.setProperty('--bg', color);
+            localStorage.setItem('whs_bg_color', color);
+            
+            // Manage UI Workspace background alignment dynamically
+            const elementsToSync = document.querySelectorAll('.workspace-overlay');
+            elementsToSync.forEach(el => el.style.backgroundColor = color);
+
+            // Active State Indicators Updating
+            const swatches = document.querySelectorAll('.swatch');
+            swatches.forEach(swatch => {
+                if(swatch.getAttribute('data-color') === color) {
+                    swatch.classList.add('active-swatch');
+                } else {
+                    swatch.classList.remove('active-swatch');
+                }
+            });
         }
 
         // --- SUBSYSTEM START ---
         function init() {
-            const savedAccent = localStorage.getItem('whs_accent') || '#ffffff';
-            setAccent(savedAccent);
+            const savedBg = localStorage.getItem('whs_bg_color') || '#000000';
+            setBackground(savedBg);
             evaluateNotices();
             renderTodos();
             updateLiveTracker();
@@ -926,3 +1020,5 @@
     </script>
 </body>
 </html>
+
+```
