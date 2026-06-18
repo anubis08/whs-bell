@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHS Portal</title>
+    <style>
+        :root {
+            --accent: #ffffff;
+            --bg: #000000;
+            --surface: #121212;
+            --surface-hover: #1c1c1e;
+            --muted: #8e8e93;
+            --glow: rgba(255, 255, 255, 0.03);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            /* Welcoming, rounded system font stack */
+            font-family: ui-rounded, "Hiragino Maru Gothic ProN", Quicksand, Comfortaa, Manrope, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Bar & Unified Bulletin System */
+        header {
+            padding: 2.5rem 2rem 1rem 2rem;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        #notices {
+            margin-bottom: 1.5rem;
+        }
+
+        .notice-card {
+            background: var(--surface);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.85rem;
+            animation: fadeIn 0.4s ease;
+            box-shadow: 0 4px 20px var(--glow);
+        }
+
+        .notice-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+        }
+
+        .notice-desc {
+            font-size: 1rem;
+            color: #f2f2f7;
+            font-weight: 500;
+        }
+
+        /* Main Dashboard Frame */
+        main {
+            flex: 1;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 2rem 5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Live Tracker Structure */
+        #live-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        #current-status {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        #timer-display {
+            font-size: 6rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            line-height: 1;
+            margin-bottom: 1.25rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        #sub-info {
+            font-size: 1.05rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* Global Fixed Controls */
+        .ui-controls {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: 200;
+        }
+
+        #menu-trigger {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 28px;
+            height: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #menu-trigger span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background-color: #ffffff;
+            border-radius: 2px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+        #menu-trigger.open span:nth-child(1) {
+            transform: translateY(11px) rotate(45deg);
+        }
+
+        #menu-trigger.open span:nth-child(2) {
+            transform: scaleX(0);
+        }
+
+        #menu-trigger.open span:nth-child(3) {
+            transform: translateY(-11px) rotate(-45deg);
+        }
+
+        /* Primary Dynamic Navigation Menu Drawer */
+        #drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            background: var(--surface);
+            z-index: 90;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 7rem 2.5rem 2rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: -10px 0 40px rgba(0,0,0,0.6);
+        }
+
+        #drawer.open {
+            right: 0;
+        }
+
+        .drawer-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .menu-link {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: block;
+        }
+
+        .menu-link:hover {
+            color: var(--accent);
+        }
+
+        .drawer-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #222;
+            padding-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        /* Fullscreen Overlay Sheet Workspaces */
+        .workspace-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 150;
+            display: none;
+            flex-direction: column;
+            padding: 6rem 2rem 4rem 2rem;
+            overflow-y: auto;
+        }
+
+        .workspace-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .workspace-container {
+            max-width: 650px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .workspace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid #1c1c1e;
+            padding-bottom: 1rem;
+        }
+
+        .workspace-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .close-overlay-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-overlay-btn:hover {
+            color: #ffffff;
+        }
+
+        /* Enhanced Pomodoro Workspace UI */
+        .pomo-grid {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        #pomo-state-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        #pomo-clock {
+            font-size: 7.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 2rem;
+        }
+
+        .pomo-presets {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+        }
+
+        .preset-btn {
+            background: var(--surface);
+            color: #ffffff;
+            border: 1px solid #222;
+            padding: 0.5rem 1.25rem;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .preset-btn:hover {
+            background: var(--surface-hover);
+            border-color: #444;
+        }
+
+        /* Enhanced Tasks Workspace UI */
+        .todo-meta-bar {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .todo-input-wrap {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid #222;
+            color: #fff;
+            padding: 0.85rem 1.25rem;
+            font-size: 1rem;
+            outline: none;
+            border-radius: 14px;
+            font-weight: 500;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            background: var(--surface-hover);
+        }
+
+        button.action-btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 0.85rem 1.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 14px;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        button.action-btn:hover {
+            opacity: 0.9;
+        }
+        
+        button.action-btn:active {
+            transform: scale(0.98);
+        }
+
+        .todo-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            padding: 1rem 1.25rem;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            font-size: 1rem;
+            font-weight: 500;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .todo-item.done {
+            opacity: 0.6;
+        }
+
+        .todo-item.done span {
+            text-decoration: line-through;
+            color: var(--muted);
+        }
+
+        .todo-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .todo-checkbox {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--muted);
+            border-radius: 6px;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.15s, border-color 0.15s;
+            position: relative;
+        }
+
+        .todo-checkbox:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .todo-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 2px;
+            width: 5px;
+            height: 9px;
+            border: solid #000000;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .delete-todo {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .delete-todo:hover {
+            color: #ff453a;
+        }
+
+        /* Color Customization Layout */
+        .color-picker-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+        }
+
+        .color-swatch-container {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.2s;
+        }
+
+        .swatch:hover {
+            transform: scale(1.15);
+        }
+
+        /* System Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui-controls">
+        <button id="menu-trigger" aria-label="Open Navigation Directory">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+
+    <header>
+        <div id="notices"></div>
+    </header>
+
+    <main>
+        <div id="live-container">
+            <div id="current-status">Connecting Matrix...</div>
+            <div id="timer-display">00:00</div>
+            <div id="sub-info">---</div>
+        </div>
+    </main>
+
+    <nav id="drawer">
+        <div class="drawer-group">
+            <div class="drawer-section-title">Navigation</div>
+            <span class="menu-link" onclick="openWorkspace('pomo-overlay')">Focus Session</span>
+            <span class="menu-link" onclick="openWorkspace('todo-overlay')">Task Manager</span>
+        </div>
+
+        <div>
+            <div class="drawer-section-title">Theme Accent</div>
+            <div class="color-picker-wrap">
+                <div class="color-swatch-container">
+                    <div class="swatch" style="background: #ffffff;" onclick="setAccent('#ffffff')"></div>
+                    <div class="swatch" style="background: #ff453a;" onclick="setAccent('#ff453a')"></div>
+                    <div class="swatch" style="background: #ff9f0a;" onclick="setAccent('#ff9f0a')"></div>
+                    <div class="swatch" style="background: #30d158;" onclick="setAccent('#30d158')"></div>
+                    <div class="swatch" style="background: #0a84ff;" onclick="setAccent('#0a84ff')"></div>
+                    <div class="swatch" style="background: #bf5af2;" onclick="setAccent('#bf5af2')"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="pomo-overlay" class="workspace-overlay">
+        <div class="workspace-container">
+            <div class="workspace-header">
+                <h2 class="workspace-title">Focus</h2>
+                <button class="close-overlay-btn" onclick="closeWorkspace('pomo-overlay')">Close ✕</button>
+            </div>
+            <div class="pomo-grid">
+                <div id="pomo-state-label">Deep Work</div>
+                <div id="pomo-clock">25:00</div>
+                
+                <div class="pomo-presets">
+                    <button class="preset-btn" onclick="setPreset(25, 'Deep Work')">25m Focus</button>
+                    <button class="preset-btn" onclick="setPreset(5, 'Short Break')">5m Break</button>
+                    <button class="preset-btn" onclick="setPreset(15, 'Long Break')">15m Break</button>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 1.5rem;">
+                    <button class="action-btn" id="pomo-master-btn" onclick="togglePomodoro()">Start Session</button>
+                    <button class="action-btn" style="background: transparent; color: #fff; border: 1px solid #333;" onclick="resetPomodoro()">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="todo-overlay" class="workspace-overlay">
+        <div class="workspace-container">
+            <div class="workspace-header">
+                <h2 class="workspace-title">Tasks</h2>
+                <button class="close-overlay-btn" onclick="closeWorkspace('todo-overlay')">Close ✕</button>
+            </div>
+            
+            <div class="todo-meta-bar">
+                <span id="todo-count-label">0 remaining</span>
+                <span style="cursor:pointer;" onclick="clearCompletedTodos()">Clear Completed</span>
+            </div>
+
+            <div class="todo-input-wrap">
+                <input type="text" id="todo-input" placeholder="What needs to be done?" onkeypress="handleTodoKey(event)">
+                <button class="action-btn" onclick="addTodo()">Add</button>
+            </div>
+            
+            <ul id="todo-list-element" class="todo-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // --- CALENDAR & SCHEDULE DATA DECK ---
+        const academicYear = 2026; 
+
+        const dynamicEvents = [
+            { name: "First Day of School", date: new Date(2026, 7, 12), leadDays: 14 },
+            { name: "Labor Day (No School)", date: new Date(2026, 8, 7), leadDays: 5 },
+            { name: "1st Quarter Comps", date: new Date(2026, 9, 7), leadDays: 14 },
+            { name: "1st Quarter Ends", date: new Date(2026, 9, 9), leadDays: 7 },
+            { name: "Indigenous Peoples' Day (No School)", date: new Date(2026, 9, 12), leadDays: 5 },
+            { name: "Veterans Day (No School)", date: new Date(2026, 10, 11), leadDays: 5 },
+            { name: "Fall Break", date: new Date(2026, 10, 23), leadDays: 10 },
+            { name: "2nd Quarter Comps", date: new Date(2026, 11, 15), leadDays: 14 },
+            { name: "1st Semester Ends", date: new Date(2026, 11, 17), leadDays: 7 },
+            { name: "Winter Break", date: new Date(2026, 11, 21), leadDays: 14 },
+            { name: "Martin Luther King Jr. Day (No School)", date: new Date(2027, 0, 18), leadDays: 5 },
+            { name: "Presidents' Day (No School)", date: new Date(2027, 1, 15), leadDays: 5 },
+            { name: "3rd Quarter Comps", date: new Date(2027, 2, 10), leadDays: 14 },
+            { name: "3rd Quarter Ends", date: new Date(2027, 2, 12), leadDays: 7 },
+            { name: "Spring Break", date: new Date(2027, 3, 29), leadDays: 14 },
+            { name: "4th Quarter Comps", date: new Date(2027, 4, 24), leadDays: 14 },
+            { name: "Last Day of School", date: new Date(2027, 4, 27), leadDays: 21 }
+        ];
+
+        const compDates = [
+            new Date(2026, 9, 7),
+            new Date(2026, 11, 15),
+            new Date(2027, 2, 10),
+            new Date(2027, 4, 24)
+        ];
+
+        const structuralHolidays = [
+            '2026-09-07', '2026-10-12', '2026-11-11', 
+            '2026-11-23', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27',
+            '2026-12-18'
+        ];
+
+        const regularSchedule = [
+            { id: "Per 0", start: "07:30", end: "08:25" },
+            { id: "Per 1", start: "08:30", end: "09:28" },
+            { id: "Per 2", start: "09:33", end: "10:30" },
+            { id: "SNACK", start: "10:30", end: "10:45" },
+            { id: "Per 3", start: "10:50", end: "11:47" },
+            { id: "Per 4", start: "11:52", end: "12:49" },
+            { id: "LUNCH", start: "12:49", end: "13:21" },
+            { id: "Per 5", start: "13:26", end: "14:23" },
+            { id: "Homeroom", start: "14:23", end: "14:34" },
+            { id: "Per 6", start: "14:39", end: "15:36" }
+        ];
+
+        const tuesdaySchedule = [
+            { id: "Per 0", start: "07:30", end: "08:25" },
+            { id: "Per 1", start: "08:30", end: "09:22" },
+            { id: "Per 2", start: "09:27", end: "10:18" },
+            { id: "SNACK", start: "10:18", end: "10:33" },
+            { id: "Per 3", start: "10:38", end: "11:29" },
+            { id: "Per 4", start: "11:34", end: "12:25" },
+            { id: "LUNCH", start: "12:25", end: "12:55" },
+            { id: "Per 5", start: "13:00", end: "13:51" },
+            { id: "Per 6", start: "13:56", end: "14:47" },
+            { id: "Meeting", start: "14:55", end: "15:55" }
+        ];
+
+        const wednesdaySchedule = [
+            { id: "Per 0", start: "07:30", end: "08:25" },
+            { id: "Per 1", start: "08:30", end: "09:23" },
+            { id: "Per 2", start: "09:28", end: "10:20" },
+            { id: "SNACK", start: "10:20", end: "10:35" },
+            { id: "Per 3", start: "10:40", end: "11:32" },
+            { id: "Per 4", start: "11:37", end: "12:29" },
+            { id: "LUNCH", start: "12:29", end: "13:01" },
+            { id: "Per 5", start: "13:06", end: "13:58" },
+            { id: "Adv/HR", start: "13:58", end: "14:39" },
+            { id: "Per 6", start: "14:44", end: "15:36" }
+        ];
+
+        // --- CORE PROCESS ENGINE ---
+        function getTimelineMinutes(timeStr) {
+            const [hrs, mins] = timeStr.split(':').map(Number);
+            return hrs * 60 + mins;
+        }
+
+        function getActiveSchedule(date) {
+            const dayStr = date.toISOString().split('T')[0];
+            if (structuralHolidays.includes(dayStr)) return null;
+            if (date.getMonth() === 11 && date.getDate() >= 21) return null; 
+            if (date.getMonth() === 0 && date.getDate() <= 1) return null;
+            if (date.getMonth() === 2 && date.getDate() >= 29) return null; 
+            if (date.getMonth() == 3 && date.getDate() <= 2) return null;
+            if (date.getMonth() > 4 && date.getMonth() < 7) return null; 
+
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) return null; 
+            if (dayOfWeek === 2) return tuesdaySchedule;
+            if (dayOfWeek === 3) return wednesdaySchedule;
+            return regularSchedule;
+        }
+
+        function updateLiveTracker() {
+            const now = new Date();
+            const currentMin = now.getHours() * 60 + now.getMinutes();
+            const currentSec = now.getSeconds();
+            const sched = getActiveSchedule(now);
+            
+            if (!sched) {
+                document.getElementById('current-status').innerText = "Campus Status";
+                document.getElementById('timer-display').innerText = "OFF-CYCLE";
+                document.getElementById('sub-info').innerText = "No academic sessions active";
+                return;
+            }
+
+            const firstPeriodStart = getTimelineMinutes(sched[0].start);
+            const lastPeriodEnd = getTimelineMinutes(sched[sched.length - 1].end);
+
+            if (currentMin < firstPeriodStart) {
+                const diffMin = firstPeriodStart - currentMin - 1;
+                const diffSec = 60 - currentSec;
+                document.getElementById('current-status').innerText = "Before Session Starts";
+                document.getElementById('timer-display').innerText = formatClock(diffMin, diffSec);
+                document.getElementById('sub-info').innerText = `Next up: ${sched[0].id} [${sched[0].start}]`;
+                return;
+            }
+
+            if (currentMin >= lastPeriodEnd) {
+                document.getElementById('current-status').innerText = "Session Complete";
+                document.getElementById('timer-display').innerText = "DISMISSED";
+                document.getElementById('sub-info').innerText = "All standard periods have concluded";
+                return;
+            }
+
+            for (let i = 0; i < sched.length; i++) {
+                const block = sched[i];
+                const blockStart = getTimelineMinutes(block.start);
+                const blockEnd = getTimelineMinutes(block.end);
+
+                if (currentMin >= blockStart && currentMin < blockEnd) {
+                    const diffMin = blockEnd - currentMin - 1;
+                    const diffSec = 60 - currentSec;
+                    document.getElementById('current-status').innerText = `${block.id}`;
+                    document.getElementById('timer-display').innerText = formatClock(diffMin, diffSec);
+                    document.getElementById('sub-info').innerText = `Ends at ${block.end}`;
+                    return;
+                }
+
+                if (i < sched.length - 1) {
+                    const nextBlock = sched[i+1];
+                    const nextBlockStart = getTimelineMinutes(nextBlock.start);
+                    
+                    if (currentMin >= blockEnd && currentMin < nextBlockStart) {
+                        const diffMin = nextBlockStart - currentMin - 1;
+                        const diffSec = 60 - currentSec;
+                        document.getElementById('current-status').innerText = "Passing Period";
+                        document.getElementById('timer-display').innerText = formatClock(diffMin, diffSec);
+                        document.getElementById('sub-info').innerText = `Next up: ${nextBlock.id}`;
+                        return;
+                    }
+                }
+            }
+        }
+
+        function formatClock(m, s) {
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        // --- INTELLIGENT BULLETIN SYSTEM ---
+        function evaluateNotices() {
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            const container = document.getElementById('notices');
+            container.innerHTML = '';
+
+            let nextCompText = "No upcoming comps scheduled";
+            for (let target of compDates) {
+                if (target >= now) {
+                    const diffTime = target - now;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    nextCompText = diffDays === 0 ? "Comps testing sequence active today" : `${diffDays} days until next Comps sequence`;
+                    break;
+                }
+            }
+
+            const compBanner = document.createElement('div');
+            compBanner.className = "notice-card";
+            compBanner.innerHTML = `<div class="notice-title">Bulletin</div><div class="notice-desc">${nextCompText}</div>`;
+            container.appendChild(compBanner);
+
+            dynamicEvents.forEach(event => {
+                const diffTime = event.date - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays >= 0 && diffDays <= event.leadDays) {
+                    const el = document.createElement('div');
+                    el.className = "notice-card";
+                    let displayDays = diffDays === 0 ? "Today" : (diffDays === 1 ? "Tomorrow" : `In ${diffDays} days`);
+                    el.innerHTML = `
+                        <div class="notice-title">Bulletin &middot; ${displayDays}</div>
+                        <div class="notice-desc">${event.name} (${event.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})</div>
+                    `;
+                    container.appendChild(el);
+                }
+            });
+        }
+
+        // --- SHEET WORKSPACE NAVIGATION OVERLAYS ---
+        const menuTrigger = document.getElementById('menu-trigger');
+        const drawer = document.getElementById('drawer');
+
+        menuTrigger.addEventListener('click', () => {
+            menuTrigger.classList.toggle('open');
+            drawer.classList.toggle('open');
+        });
+
+        function openWorkspace(id) {
+            menuTrigger.classList.remove('open');
+            drawer.classList.remove('open');
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeWorkspace(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // --- ENHANCED POMODORO FOCUS SYSTEM ---
+        let pomoInterval = null;
+        let pomoMinutes = 25;
+        let pomoSeconds = 0;
+        let pomoRunning = false;
+
+        function setPreset(mins, label) {
+            clearInterval(pomoInterval);
+            pomoRunning = false;
+            pomoMinutes = mins;
+            pomoSeconds = 0;
+            document.getElementById('pomo-state-label').innerText = label;
+            document.getElementById('pomo-master-btn').innerText = "Start Session";
+            renderPomoDisplay();
+        }
+
+        function togglePomodoro() {
+            const btn = document.getElementById('pomo-master-btn');
+            if (pomoRunning) {
+                clearInterval(pomoInterval);
+                pomoRunning = false;
+                btn.innerText = "Resume";
+            } else {
+                pomoRunning = true;
+                btn.innerText = "Pause";
+                pomoInterval = setInterval(() => {
+                    if (pomoSeconds === 0) {
+                        if (pomoMinutes === 0) {
+                            clearInterval(pomoInterval);
+                            pomoRunning = false;
+                            btn.innerText = "Start Session";
+                            alert("Timer block complete.");
+                            return;
+                        }
+                        pomoMinutes--;
+                        pomoSeconds = 59;
+                    } else {
+                        pomoSeconds--;
+                    }
+                    renderPomoDisplay();
+                }, 1000);
+            }
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomoInterval);
+            pomoRunning = false;
+            pomoMinutes = 25;
+            pomoSeconds = 0;
+            document.getElementById('pomo-state-label').innerText = "Deep Work";
+            document.getElementById('pomo-master-btn').innerText = "Start Session";
+            renderPomoDisplay();
+        }
+
+        function renderPomoDisplay() {
+            document.getElementById('pomo-clock').innerText = formatClock(pomoMinutes, pomoSeconds);
+        }
+
+        // --- ENHANCED TASKS SYSTEM (SESSION STORAGE) ---
+        let todos = JSON.parse(sessionStorage.getItem('whs_todos')) || [];
+
+        function saveTodos() {
+            sessionStorage.setItem('whs_todos', JSON.stringify(todos));
+            renderTodos();
+        }
+
+        function handleTodoKey(e) {
+            if (e.key === 'Enter') addTodo();
+        }
+
+        function addTodo() {
+            const input = document.getElementById('todo-input');
+            const text = input.value.trim();
+            if (!text) return;
+            todos.push({ id: Date.now(), text, done: false });
+            input.value = '';
+            saveTodos();
+        }
+
+        function toggleTodo(id) {
+            todos = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
+            saveTodos();
+        }
+
+        function deleteTodo(id) {
+            todos = todos.filter(t => t.id !== id);
+            saveTodos();
+        }
+
+        function clearCompletedTodos() {
+            todos = todos.filter(t => !t.done);
+            saveTodos();
+        }
+
+        function renderTodos() {
+            const container = document.getElementById('todo-list-element');
+            const countLabel = document.getElementById('todo-count-label');
+            container.innerHTML = '';
+            
+            const remaining = todos.filter(t => !t.done).length;
+            countLabel.innerText = `${remaining} task${remaining !== 1 ? 's' : ''} remaining / ${todos.length} total`;
+
+            todos.forEach(t => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${t.done ? 'done' : ''}`;
+                li.innerHTML = `
+                    <div class="todo-left">
+                        <input type="checkbox" class="todo-checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${t.id})">
+                        <span>${escapeHtml(t.text)}</span>
+                    </div>
+                    <button class="delete-todo" onclick="deleteTodo(${t.id})">Remove</button>
+                `;
+                container.appendChild(li);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- APPEARANCE MANAGEMENT ---
+        function setAccent(color) {
+            document.documentElement.style.setProperty('--accent', color);
+            document.documentElement.style.setProperty('--glow', color + "0D"); 
+            localStorage.setItem('whs_accent', color);
+        }
+
+        // --- SUBSYSTEM START ---
+        function init() {
+            const savedAccent = localStorage.getItem('whs_accent') || '#ffffff';
+            setAccent(savedAccent);
+            evaluateNotices();
+            renderTodos();
+            updateLiveTracker();
+            setInterval(updateLiveTracker, 1000);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
