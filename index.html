@@ -490,7 +490,7 @@
 
     <main>
         <div id="live-container">
-            <div id="current-status">Connecting Matrix...</div>
+            <div id="current-status">Connecting...</div>
             <div id="timer-display">00:00</div>
             <div id="sub-info">---</div>
         </div>
@@ -669,7 +669,7 @@
             
             if (!sched) {
                 document.getElementById('current-status').innerText = "Campus Status";
-                document.getElementById('timer-display').innerText = "OFF-CYCLE";
+                document.getElementById('timer-display').innerText = "BREAK";
                 document.getElementById('sub-info').innerText = "No academic sessions active";
                 return;
             }
@@ -739,7 +739,7 @@
                 if (target >= now) {
                     const diffTime = target - now;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    nextCompText = diffDays === 0 ? "Comps testing sequence active today" : `${diffDays} days until next Comps sequence`;
+                    nextCompText = diffDays === 0 ? "Comps today!" : `${diffDays} days until Comps`;
                     break;
                 }
             }
