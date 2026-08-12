@@ -996,17 +996,7 @@
             });
         }
 
-         function formatTime(s) { const m = Math.floor(s / 60); const sec = s % 60; return `${m}:${String(sec).padStart(2, '0')}`; }
-
-        setTheme(currentThemeKey, false);
-        setInterval(update, 1000);
-        update();
-
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && (e.keyCode === 85)) e.preventDefault();
-            if (e.keyCode === 123) e.preventDefault();
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.keyCode === 73)) e.preventDefault();
-        });
+    
 
         // --- SUBSYSTEM START ---
         function init() {
